@@ -12,5 +12,5 @@ urlpatterns = [
     ),
     path("auth/", AuthCheck.as_view(), name="auth_check"),
     path("google/", GoogleLogin.as_view(), name="google_login"),
-    
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]

@@ -32,7 +32,7 @@ class User(AbstractBaseUser):
     GENDER_CHOICES = [
         ('FEMALE', 'Female'),
         ('MALE', 'Male'),
-    ]        
+    
     id = models.AutoField(primary_key=True)  # Add this line to add an integer id field
     email = models.EmailField(unique=True, validators=[validate_email])
     password = models.CharField(max_length=128)

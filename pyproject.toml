@@ -15,6 +15,9 @@ requests = "^2.31.0"
 django-allauth = "^0.59.0"
 django-rest-auth = "^0.9.5"
 django-cors-headers = "^4.3.1"
+mysqlclient = "^2.2.1"
+pymysql = "^1.1.0"
+gunicorn = "^21.2.0"
 
 
 [build-system]

@@ -12,6 +12,13 @@ import requests
 
 GOOGLE_API_KEY = "1096551886413-j78gem487no6jg5jef4lk4abqdpfa9uq.apps.googleusercontent.com"
 
+from django.contrib.auth.hashers import make_password
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from .models import User
+from .serializers import UserSerializer
+
 class SignUpView(APIView):
     permission_classes = (permissions.AllowAny,)
 
@@ -19,7 +26,7 @@ class SignUpView(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
         password2 = request.data.get("password2")  # 2차 비밀번호 입력
-        gender = request.data.get("gender")
+        gender = request.data.get("gender")  # 성별 입력
 
         if email is None or "@" not in email or password is None or len(password) < 8:
             return Response(
@@ -39,13 +46,20 @@ class SignUpView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        password = make_password(password)
-        user = User.objects.create(email=email, password=password, gender=gender)
+
+        # 비밀번호를 해싱하여 저장
+        user = User.objects.create(email=email, gender=gender)
+        user.set_password(password)
+        user.save()
+        
+        # 사용자 정보를 시리얼라이즈하고 응답에 gender 포함
         serializer = UserSerializer(user)
         response_data = serializer.data
         response_data['gender'] = gender
-        print("res: ", response_data)
+
+        serializer = UserSerializer(user)
         return Response(response_data, status=status.HTTP_201_CREATED)
+
     
 class AuthCheck(APIView):
     # authentication_classes = [JSONWebTokenAuthentication]
