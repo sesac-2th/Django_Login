@@ -12,8 +12,8 @@ SECRET_KEY = secrets.token_urlsafe(32)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1"]
-
+ALLOWED_HOSTS = ["127.0.0.1", "http://localhost:3000"]
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 

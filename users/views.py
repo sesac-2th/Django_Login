@@ -19,6 +19,7 @@ class SignUpView(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
         password2 = request.data.get("password2")  # 2차 비밀번호 입력
+        gender = request.data.get("gender")
 
         if email is None or "@" not in email or password is None or len(password) < 8:
             return Response(
@@ -39,9 +40,12 @@ class SignUpView(APIView):
             )
 
         password = make_password(password)
-        user = User.objects.create(email=email, password=password)
+        user = User.objects.create(email=email, password=password, gender=gender)
         serializer = UserSerializer(user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        response_data = serializer.data
+        response_data['gender'] = gender
+        print("res: ", response_data)
+        return Response(response_data, status=status.HTTP_201_CREATED)
     
 class AuthCheck(APIView):
     # authentication_classes = [JSONWebTokenAuthentication]
@@ -54,7 +58,32 @@ class AuthCheck(APIView):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+
+        # Check if the login was successful
+        if response.status_code == status.HTTP_200_OK:
+            user = User.objects.get(email=request.data.get('email'))
+            print("user: ", user)
+            # Serialize user data to include in the response
+            user_serializer = UserSerializer(user)
+            print("user-ser: ", user_serializer)
+            user_data = user_serializer.data
+
+            # Extract token data from the response
+            refresh = response.data.get('refresh')
+            access = response.data.get('access')
+
+            # Include user data and token information in the response
+            response.data = {
+                'user': user_data,
+                'tokens': {
+                    'refresh': refresh,
+                    'access': access,
+                }
+            }
+
+        return response
     
 
 # class Java(TokenObtainPairView):

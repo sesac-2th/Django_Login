@@ -1,8 +1,6 @@
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import validate_email
 from django.db import models
-from django.contrib.auth.models import BaseUserManager
-
 
 class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
@@ -28,13 +26,17 @@ class UserManager(BaseUserManager):
     def get_by_natural_key(self, username):
         return self.get(email=username)
 
-
 class User(AbstractBaseUser):
     objects = UserManager()
 
+    GENDER_CHOICES = [
+        ('FEMALE', 'Female'),
+        ('MALE', 'Male'),
+    ]        
+    id = models.AutoField(primary_key=True)  # Add this line to add an integer id field
     email = models.EmailField(unique=True, validators=[validate_email])
     password = models.CharField(max_length=128)
-    # gender = models.CharField(max_length=10, blank=True, null=True)
+    gender = models.CharField(max_length=6, choices=GENDER_CHOICES, blank=True, null=True)
 
     USERNAME_FIELD = "email"
 
