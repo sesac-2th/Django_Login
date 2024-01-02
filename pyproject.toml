@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "login"
+version = "0.1.0"
+description = ""
+authors = ["woongpang <jr.woong@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "^5.0"
+djangorestframework = "^3.14.0"
+djangorestframework-simplejwt = "^5.3.1"
+drf-yasg = "^1.21.7"
+requests = "^2.31.0"
+django-allauth = "^0.59.0"
+django-rest-auth = "^0.9.5"
+django-cors-headers = "^4.3.1"
+mysqlclient = "^2.2.1"
+pymysql = "^1.1.0"
+gunicorn = "^21.2.0"
+boto3 = "^1.34.10"
+requests-toolbelt = "^1.0.0"
+environ = "^1.0"
+python-decouple = "^3.8"
+python-dotenv = "^1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
