@@ -110,24 +110,45 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "login.wsgi.application"
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql', # engine: mysql
+#         'NAME' : 'test', # DB Name
+#         'USER' : 'admin', # DB User
+#         'PASSWORD' : 'adminadmin', # Password
+#         'HOST': 'database-1.cgl5yw7b8kk5.ap-northeast-2.rds.amazonaws.com', # 생성한 데이터베이스 엔드포인트
+#         'PORT': '3306', # 데이터베이스 포트
+#         'OPTIONS':{
+#             'init_command' : "SET sql_mode='STRICT_TRANS_TABLES'"
+#         }
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', # engine: mysql
-        'NAME' : 'test', # DB Name
-        'USER' : 'admin', # DB User
-        'PASSWORD' : 'adminadmin', # Password
-        'HOST': 'database-1.cgl5yw7b8kk5.ap-northeast-2.rds.amazonaws.com', # 생성한 데이터베이스 엔드포인트
-        'PORT': '3306', # 데이터베이스 포트
-        'OPTIONS':{
-            'init_command' : "SET sql_mode='STRICT_TRANS_TABLES'"
-        }
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
     }
 }
+
+# CACHES = {
+#     'default': {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "rediss://red-vtma2h.serverless.apn2.cache.amazonaws.com:6379/0",
+#         "OPTIONS": {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     }
+# }
 
 CACHES = {
     'default': {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "rediss://red-vtma2h.serverless.apn2.cache.amazonaws.com:6379/0",
+        "LOCATION": os.environ.get('REDIS_HOST'),
         "OPTIONS": {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }

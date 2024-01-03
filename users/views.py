@@ -108,7 +108,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class GenerateVideoView(APIView):
     def post(self, request):
         engine_id = "stable-diffusion-xl-1024-v1-0"
-        api_host = os.getenv('API_HOST', 'https://api.stability.ai')
+        api_host = os.getenv('API_HOST')
         api_key = os.getenv('STABILITY_API_KEY')
         
         if api_key is None:
