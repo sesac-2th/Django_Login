@@ -17,9 +17,12 @@ import base64, json
 import os
 import requests
 import boto3
+import time
 from botocore.exceptions import NoCredentialsError
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from dotenv import load_dotenv
+from django.core.cache import cache
+import json
 load_dotenv()
 
 class SignUpView(APIView):
@@ -107,7 +110,7 @@ class GenerateVideoView(APIView):
         engine_id = "stable-diffusion-xl-1024-v1-0"
         api_host = os.getenv('API_HOST', 'https://api.stability.ai')
         api_key = os.getenv('STABILITY_API_KEY')
-
+        
         if api_key is None:
             return JsonResponse({"error": "Missing Stability API key."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -170,6 +173,7 @@ class GenerateVideoView(APIView):
         data = response.json()
         video_id = data.get("id")
         
+        time.sleep(60)
         # S3에 동영상 저장
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -180,9 +184,10 @@ class GenerateVideoView(APIView):
 
         try:
             response = requests.get(url, headers=headers)
-            response.raise_for_status()
+            print("statusCode: ", response.raise_for_status())
 
             content = response.json()
+            print("content: ", content)
             video_content_base64 = content['video'] #response.json().get('video', '')        
             video_content = base64.b64decode(video_content_base64)
             s3_bucket_name = os.getenv('BUCKET_NAME')
@@ -191,9 +196,27 @@ class GenerateVideoView(APIView):
             s3_key = f"videos/{request.user.pk}/{video_id}.mp4"
 
             s3_client = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
-            s3_client.put_object(Body=video_content, Bucket=s3_bucket_name, Key=s3_key)
+            s3_client.put_object(Body=video_content, Bucket=s3_bucket_name, Key=s3_key, ContentType="video/mp4")
 
             s3_video_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{s3_key}"
+            
+            user = request.user
+            user_id = user.id
+            
+            s3_key_video = f"videos/{user_id}"
+            s3_video_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{s3_key_video}"
+            print(s3_video_url)
+            # S3 클라이언트 생성
+            s3_client = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
+
+            response = s3_client.list_objects(Bucket=s3_bucket_name, Prefix=s3_key_video)
+            objects = response.get('Contents', [])
+            
+            # 파일 목록 생성
+            file_list = [f"{s3_video_url}/{f['Key'][len(s3_key_video)+1:]}" for f in objects]
+            # cache.set(user_id, json.dumps(file_list), 300)
+            jsonObj = {"s3_video_url": s3_video_url, "file_list": file_list}
+            cache.set(user_id, json.dumps(jsonObj), 60*60*12)
             return JsonResponse({"video_id": video_id, "s3_video_url": s3_video_url}, status=status.HTTP_200_OK)
         
         except requests.exceptions.RequestException as e:
@@ -209,7 +232,7 @@ class GenerateVideoView(APIView):
         s3_bucket_name = os.getenv('BUCKET_NAME')
         s3_access_key = os.getenv('BUCKET_ACCESS_KEY')
         s3_secret_key = os.getenv('BUCKET_SECRET_KEY')
-        s3_key_video = f"videos/{user_id}/"
+        s3_key_video = f"videos/{user_id}"
         s3_video_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{s3_key_video}"
         print(s3_video_url)
         # S3 클라이언트 생성
@@ -217,11 +240,16 @@ class GenerateVideoView(APIView):
 
         # S3 객체 목록 가져오기
         try:
+            videoUrls = cache.get(user_id)
+            if videoUrls:
+                print("redis cache hit")
+                print("videoUrls: ", videoUrls)
+                return JsonResponse(json.loads(videoUrls), status=status.HTTP_200_OK)
             response = s3_client.list_objects(Bucket=s3_bucket_name, Prefix=s3_key_video)
             objects = response.get('Contents', [])
             
             # 파일 목록 생성
-            file_list = [f"{s3_video_url}{f['Key']}" for f in objects]
+            file_list = [f"{s3_video_url}/{f['Key'][len(s3_key_video)+1:]}" for f in objects]
 
             return JsonResponse({"s3_video_url": s3_video_url, "file_list": file_list}, status=status.HTTP_200_OK)
 
