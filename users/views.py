@@ -235,6 +235,11 @@ class GenerateVideoView(APIView):
         s3_key_video = f"videos/{user_id}"
         s3_video_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{s3_key_video}"
         print(s3_video_url)
+        
+        # cdn url 치환
+        cloudfront_url = "https://d1zjfdzmtf1vra.cloudfront.net"
+        file_list = []
+        
         # S3 클라이언트 생성
         s3_client = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
 
@@ -249,9 +254,15 @@ class GenerateVideoView(APIView):
             objects = response.get('Contents', [])
             
             # 파일 목록 생성
-            file_list = [f"{s3_video_url}/{f['Key'][len(s3_key_video)+1:]}" for f in objects]
+            # file_list = [f"{s3_video_url}/{f['Key'][len(s3_key_video)+1:]}" for f in objects]
+            # return JsonResponse({"s3_video_url": s3_video_url, "file_list": file_list}, status=status.HTTP_200_OK)
+            
+            for f in objects:
+                s3_object_key = f['Key'][len(s3_key_video) + 1:]
+                cloudfront_object_url = f"{cloudfront_url}/videos/{user_id}/{s3_object_key}"
+                file_list.append(cloudfront_object_url)
 
-            return JsonResponse({"s3_video_url": s3_video_url, "file_list": file_list}, status=status.HTTP_200_OK)
+            return JsonResponse({"cloudfront_url": cloudfront_url, "file_list": file_list}, status=status.HTTP_200_OK)
 
         except Exception as e:
             return JsonResponse({"error": f"Failed to retrieve file list from S3: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
