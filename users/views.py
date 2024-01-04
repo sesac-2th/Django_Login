@@ -23,10 +23,16 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from dotenv import load_dotenv
 from django.core.cache import cache
 import json
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 load_dotenv()
 
 class SignUpView(APIView):
     permission_classes = (permissions.AllowAny,)
+    @swagger_auto_schema(
+        request_body=UserSerializer,
+        responses={201: UserSerializer}
+    )
 
     def post(self, request):
         email = request.data.get("email")
@@ -70,6 +76,30 @@ class SignUpView(APIView):
 class AuthCheck(APIView):
     # authentication_classes = [JSONWebTokenAuthentication]
     # permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                description='Bearer token for authentication',
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Authentication successful",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING, description='Authentication successful'),
+                        'code': openapi.Schema(type=openapi.TYPE_INTEGER, description='0'),
+                    },
+                ),
+            ),
+            401: "Unauthorized",
+        },
+    )
 
     def get(self, request):
         # 여기에서는 별다른 로직을 추가하여 인증을 확인하거나 처리합니다.
@@ -106,6 +136,20 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         return response
 
 class GenerateVideoView(APIView):
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'image': openapi.Schema(type=openapi.TYPE_FILE, description='Image file (JPEG or PNG)'),
+            },
+            required=['image'],
+        ),
+        responses={
+            200: openapi.Schema(type=openapi.TYPE_OBJECT, properties={'video_id': openapi.Schema(type=openapi.TYPE_STRING, description='Generated video ID')}),
+            400: "Bad Request",
+            500: "Internal Server Error",
+        },
+    )
     def post(self, request):
         engine_id = "stable-diffusion-xl-1024-v1-0"
         api_host = os.getenv('API_HOST')
@@ -222,6 +266,29 @@ class GenerateVideoView(APIView):
         except requests.exceptions.RequestException as e:
             return JsonResponse({"error": f"Failed to download video: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    
+    
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                description='Bearer token for authentication',
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'cloudfront_url': openapi.Schema(type=openapi.TYPE_STRING, description='CloudFront URL for videos'),
+                    'file_list': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
+                },
+            ),
+            500: "Internal Server Error",
+        },
+    )
     def get(self, request):
         # 사용자 정보 가져오기
         user = request.user
@@ -265,4 +332,4 @@ class GenerateVideoView(APIView):
             return JsonResponse({"cloudfront_url": cloudfront_url, "file_list": file_list}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return JsonResponse({"error": f"Failed to retrieve file list from S3: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({"error": f"Failed to retrieve file list from S3: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  

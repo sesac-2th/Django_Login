@@ -2,6 +2,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from users.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from drf_yasg.utils import swagger_auto_schema
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -29,6 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
+    @swagger_auto_schema(responses={200: TokenObtainPairSerializer()})
     def get_token(cls, user):
         token = super().get_token(user)
         token["email"] = user.email
