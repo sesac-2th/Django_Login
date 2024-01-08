@@ -225,7 +225,7 @@ class GenerateVideoView(APIView):
         }
         
         url = f"{api_host}/v2alpha/generation/image-to-video/result/{video_id}"
-
+        cloudfront_url = "https://d1zjfdzmtf1vra.cloudfront.net"
         try:
             response = requests.get(url, headers=headers)
             print("statusCode: ", response.raise_for_status())
@@ -257,11 +257,11 @@ class GenerateVideoView(APIView):
             objects = response.get('Contents', [])
             
             # 파일 목록 생성
-            file_list = [f"{s3_video_url}/{f['Key'][len(s3_key_video)+1:]}" for f in objects]
+            file_list = [f"{cloudfront_url}/{s3_key_video}/{f['Key'][len(s3_key_video)+1:]}" for f in objects]
             # cache.set(user_id, json.dumps(file_list), 300)
-            jsonObj = {"s3_video_url": s3_video_url, "file_list": file_list}
+            jsonObj = {"s3_video_url": cloudfront_url, "file_list": file_list}
             cache.set(user_id, json.dumps(jsonObj), 60*60*12)
-            return JsonResponse({"video_id": video_id, "s3_video_url": s3_video_url}, status=status.HTTP_200_OK)
+            return JsonResponse({"video_id": video_id, "s3_video_url": cloudfront_url}, status=status.HTTP_200_OK)
         
         except requests.exceptions.RequestException as e:
             return JsonResponse({"error": f"Failed to download video: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
